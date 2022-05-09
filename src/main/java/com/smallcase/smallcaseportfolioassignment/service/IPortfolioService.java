@@ -15,4 +15,6 @@ public interface IPortfolioService {
     List<Security> getAllSecurities();
     Security getSecurityById(String ticker);
     void update(Security security);
+
+    String getReturns();
 }

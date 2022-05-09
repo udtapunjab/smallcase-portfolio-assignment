@@ -21,6 +21,7 @@ import java.util.Optional;
 public class PortfolioService implements IPortfolioService{
 
     private final Logger logger = LoggerFactory.getLogger(PortfolioService.class);
+    private final long CURRENT_PRICE = 100L;
 
     @Autowired
     TradeRepository tradeRepo;
@@ -43,7 +44,7 @@ public class PortfolioService implements IPortfolioService{
 
     @Override
     public String addTrade(Trade trade) {
-        tradeRepo.save(trade);
+
 
         if("SELL".equals(trade.getTradeType())){
             Security security = securityRepo.findById(trade.getTicker()).orElseThrow(() -> new NoSecurityAvailableInPortfolioException("No Security for this ticker available in portfolio"));
@@ -54,6 +55,7 @@ public class PortfolioService implements IPortfolioService{
 
             security.setNumberOfShares(security.getNumberOfShares() - trade.getQuantity());
             securityRepo.save(security);
+            tradeRepo.save(trade);
             return "SELL successful : tradeId= "+trade.getTradeId();
         }
         else if("BUY".equals(trade.getTradeType())){
@@ -69,12 +71,13 @@ public class PortfolioService implements IPortfolioService{
                 security.setAverageBuyPrice(newAveragePrice);
 
                 securityRepo.save(security);
-
+                tradeRepo.save(trade);
                 return "BUY successful : tradeId= "+trade.getTradeId();
             }
             else{
                 Security security = new Security(trade.getTicker(), trade.getPricePerShare(), trade.getQuantity());
                 securityRepo.save(security);
+                tradeRepo.save(trade);
                 return "BUY successful: tradeId= "+trade.getTradeId();
             }
         }
@@ -176,4 +179,19 @@ public class PortfolioService implements IPortfolioService{
     public void update(Security security) {
         securityRepo.save(security);
     }
+
+    @Override
+    public String getReturns() {
+        final long[] returnsSum = {0L};
+
+        securityRepo.findAll().forEach(security -> {
+            returnsSum[0] += (CURRENT_PRICE - security.getAverageBuyPrice())*security.getNumberOfShares();
+        });
+
+        return  String.valueOf(returnsSum[0]);
+    }
 }
+/*
+SUM((CURRENT_PRICE[ticker] - AVERAGE_BUY_PRICE[ticker]) *
+CURRENT_QUANTITY[ticker])
+ */

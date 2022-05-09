@@ -61,4 +61,9 @@ public class PortfolioController {
         return portfolioService.deleteTrade(tradeId);
     }
 
+    @GetMapping("/returns")
+    public String getReturns(){
+        return portfolioService.getReturns();
+    }
+
 }
